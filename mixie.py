@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ---------------------------------------------------------------------
-"""Usage: driftie.py NAME 
+"""Usage: mixie.py NAME 
     [-t T] 
+    [-n N]  
     [-p P]
-    [-d D]
     [-q Q]
     [-s S]
     [--dt DT]
-    [--min_P MP]
 
-Wilcon-Cowan EI model, where the oscillation frequency drifts
-with time.
+Wilcon-Cowan EI model.
 
     Arguments
         NAME        name of the results file
@@ -19,12 +17,11 @@ with time.
     Options:
         -h help     show this screen
         -t T        simultation run time [default: 3.0]
-        -p P        E drive at burst [default: 2]
-        -d D        drive drift term [default: 0.1]
-        -q Q        avg I drive  [default: 1]
-        -s S        std dev of drive variations [default: 0.1]
+        -n N        number of populations [default: 10]
+        -p P        Avg E drive  [default: 2]
+        -q Q        Avg I drive  [default: 1]
+        -s S        Std dev of drive variations [default: 0.1]
         --dt DT     time resolution [default: 1e-3]
-        --min_P MP    smallest P possible [default: 1]
 """
 from __future__ import division, print_function
 
@@ -33,15 +30,14 @@ import numpy as np
 from pykdf.kdf import save_kdf
 
 from brian2 import *
-from fakespikes import rates
 
 
-def ie(t, P, drift, s, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1):
+# P=1, Q=3
+def _ie(t, P, Q, c1, c2, c3, c4, dt=1e-3):
     # --
     time = t * second
     time_step = dt * second
 
-    # -
     # Fixed parameters.
     re = 1.0
     ri = 0.5
@@ -52,25 +48,16 @@ def ie(t, P, drift, s, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1)
     tau_e = 5 * msecond
     tau_i = 10 * msecond
 
-    # -
-    # Define the drifting drive
-    times = rates.create_times(t, dt)
-    P = rates.stim(times, P, drift)
-    P[P < min_P] = min_P
-
-    # Scale it
     P = P * (2**-0.03) 
 
-    # Format for Brian2
-    P = TimedArray(P, dt=time_step)
-
-    # -
     eqs = """
-            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k * P(t) - 2))) - 1/(1 + exp(2*1.0)))) / tau_e : 1
+            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k* P - 2))) - 1/(1 + exp(2*1.0)))) / tau_e : 1
             dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i : 1
+            # P : 1 (constant)
+            # Q : 1 (constant)
         """
 
-    pops = NeuronGroup(1, model=eqs, namespace={'Q' : Q})
+    pops = NeuronGroup(1, model=eqs, namespace={'Q' : Q, 'P': P})
     pops.E = 0
     pops.I = 0
 
@@ -83,7 +70,25 @@ def ie(t, P, drift, s, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1)
     defaultclock.dt = time_step
     run(time)
 
-    return mon.I.flatten(), mon.E.flatten()
+    return mon.I, mon.E
+
+
+def ie(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
+    if len(Ps) != N:
+        raise ValueError("Ps must have a len of {}".format(N))
+    if len(Qs) != N:
+        raise ValueError("Qs must have a len of {}".format(N))
+
+    E, I = [], []
+    for n, (p, q) in enumerate(zip(Ps, Qs)):
+        i, e = _ie(t, p, q, c1, c2, c3, c4, dt)
+        E.append(e)
+        I.append(i)
+
+    E = np.vstack(E).mean(0)
+    I = np.vstack(I).mean(0)
+
+    return I, E    
 
 
 if __name__ == "__main__":
@@ -91,37 +96,37 @@ if __name__ == "__main__":
    
     # -
     # Process params
+    N = int(args['-n'])
+    if N < 5:
+        raise ValueError("N must be > 5.")
+
     t = float(args['-t'])
     dt = float(args['--dt'])
    
     P = float(args['-p'])
-    d = float(args['-d'])
+    Q = float(args['-q'])
     s = float(args['-s'])
 
-    Q = float(args['-q'])
-    min_P = float(args['--min_P'])
-
-    if not np.allclose(s, 0):
-        d = np.random.normal(d, d * s, size=1)
-
-    # Prevent negative drifts
-    d[d < 0] = 0.0001
+    if np.allclose(s, 0):
+        Ps = np.repeat(P, N)
+        Qs = np.repeat(Q, N)
+    else:
+        Ps = np.random.normal(P, P * s, size=N)
+        Qs = np.random.normal(Q, Q * s, size=N)
 
     # -
-    # Run model
-    I, E = ie(t, P, d, s, min_P=min_P)
+    I, E = ie(t, Ps, Qs, N, dt=dt)
     lfp = (E + I)
- 
- # -
+
+    # -
     save_kdf(
             str(args['NAME']),
+            N=N,
             E=E,
             I=I,
             lfp=lfp,
             t=t,
             dt=dt,
-            P=P,
-            Q=Q,
-            s=s,
-            d=d
+            Ps=Ps,
+            Qs=Qs
         )

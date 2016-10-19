@@ -3,7 +3,6 @@
 # ---------------------------------------------------------------------
 """Usage: burstie.py NAME 
     [-t T] 
-    [-n N]  
     [-p P]
     [-b B]
     [-w W]
@@ -19,7 +18,6 @@ Wilcon-Cowan EI model of oscillatory bursting.
     Options:
         -h help     show this screen
         -t T        simultation run time [default: 3.0]
-        -n N        number of populations [default: 1]
         -p P        E drive at burst [default: 2]
         -b B        burst onset time [default: 1]
         -w W        burst onset length [default: 0.1]
@@ -81,9 +79,9 @@ def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=
     # --
     # Run
     defaultclock.dt = time_step
-    run(time, report='text')
+    run(time)
 
-    return mon.I, mon.E
+    return mon.I.flatten(), mon.E.flatten()
 
 
 if __name__ == "__main__":
@@ -91,57 +89,39 @@ if __name__ == "__main__":
    
     # -
     # Process params
-    N = int(args['-n'])
-
     t = float(args['-t'])
     dt = float(args['--dt'])
    
-    P = float(args['-p'])
 
     t_burst = float(args['-b'])
     w = float(args['-w'])
 
     Q = float(args['-q'])
-    Qs = np.repeat(Q, N)
-
+    P = float(args['-p'])
     s = float(args['-s'])
 
-    if np.allclose(s, 0):
-        Ps = np.repeat(P, N)
-        ws = np.repeat(w, N)
-    else:
-        # Only add noise to the window length
-        ws = np.random.normal(w, w * s, size=N)
-
-    # Prevent negative time
-    ws[ws < 0] = 0.0001
+    # Only add noise to the window length
+    if not np.allclose(s, 0):
+        w = np.random.normal(w, w * s, size=1)
+        # Prevent negative time
+        if w < 0:
+            w = 0.0001 
 
     # -
-    # Run models
-    E, I = [], []
-    for n, (P, w) in enumerate(zip(Ps, ws)):
-
-        i, e = ie(t, P, t_burst, w)
-
-        E.append(e)
-        I.append(i)
-
-    E = np.vstack(E)
-    I = np.vstack(I)
-
-    lfp = (E + I).mean(0) 
+    # Run model
+    I, E = ie(t, P, t_burst, w)
+    lfp = (E + I)
 
     # -
     save_kdf(
             str(args['NAME']),
-            N=N,
             E=E,
             I=I,
             lfp=lfp,
             t=t,
             dt=dt,
-            Ps=Ps,
-            Qs=Qs,
-            ws=ws,
+            P=P,
+            Q=Q,
+            w=w,
             s=s
         )
