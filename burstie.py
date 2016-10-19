@@ -110,7 +110,7 @@ if __name__ == "__main__":
         Ps = np.repeat(P, N)
         ws = np.repeat(w, N)
     else:
-        Ps = np.random.normal(P, P * s, size=N)
+        # Only add noise to the window length
         ws = np.random.normal(w, w * s, size=N)
 
     # Prevent negative time
