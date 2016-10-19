@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # ---------------------------------------------------------------------
-"""Usage: ei.py NAME 
+"""Usage: ie.py NAME 
     [-t T] 
     [-n N]  
     [-p P]
@@ -33,7 +33,7 @@ from brian2 import *
 
 
 # P=1, Q=3
-def ei(t, P, Q, c1, c2, c3, c4, dt=1e-3):
+def ie(t, P, Q, c1, c2, c3, c4, dt=1e-3):
     # --
     time = t * second
     time_step = dt * second
@@ -70,7 +70,7 @@ def ei(t, P, Q, c1, c2, c3, c4, dt=1e-3):
     defaultclock.dt = time_step
     run(time, report='text')
 
-    return mon.E, mon.I
+    return mon.I, mon.E
 
 
 def simulate(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
@@ -83,7 +83,7 @@ def simulate(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
 
     E, I = [], []
     for n, (p, q) in enumerate(zip(Ps, Qs)):
-        e, i = ei(t, p, q, c1, c2, c3, c4, dt)
+        i, e = ie(t, p, q, c1, c2, c3, c4, dt)
 
         E.append(e)
         I.append(i)
@@ -91,7 +91,7 @@ def simulate(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
     E = np.vstack(E)
     I = np.vstack(I)
 
-    return E, I    
+    return I, E    
 
 
 if __name__ == "__main__":
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         Qs = np.random.normal(Q, Q * s, size=N)
 
     # -
-    E, I = simulate(t, Ps, Qs, N, dt=dt)
+    I, E = simulate(t, Ps, Qs, N, dt=dt)
     lfp = (E + I).mean(0) 
 
     # -
