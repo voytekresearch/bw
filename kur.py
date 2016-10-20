@@ -61,9 +61,11 @@ def simulate(theta0, times, omegas, K, N):
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
+
     seed = int(args['--seed'])
     np.random.seed(seed)
 
+    # -
     # Network
     N = int(args['-n'])
     K = float(args['-k'])
@@ -73,6 +75,7 @@ if __name__ == "__main__":
     dt = float(args['--dt'])
     times = np.linspace(0, T, int(T / dt))
 
+    # -
     # Init oscillators
     omega = float(args['-o']); # mean freq
     omega_range = float(args['-r'])
@@ -86,17 +89,34 @@ if __name__ == "__main__":
     if b < 0:
         raise ValueError("The center frequency must be > 0.")
 
+    # Init
     omegas = np.random.uniform(a, b, size=N)
-
     theta0 = np.random.uniform(-np.pi * 2, np.pi * 2, size=N)  
 
+    # -
     thetas = simulate(theta0, times, omegas, K, N)
 
+    # -
+    # From the unit circle to sin waves, and the simulated lfp.
+    waves = []
+    for n in range(N):
+        th = thetas[:, n]
+        f = omegas[n]
+        
+        wave = np.sin(f * 2 * np.pi * times + th)
+        waves.append(wave)
+
+    waves = np.vstack(waves)
+    lfp = waves.mean(0)
+
+    # -
     save_kdf(
             str(args['NAME']),
             thetas=thetas,
             theta0=theta0,
             omegas=omegas,
+            waves=waves,
+            lfp=lfp,
             seed=seed,
             N=N, 
             K=K, 
