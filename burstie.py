@@ -86,6 +86,7 @@ def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
+    np.random.seed(42)
    
     # -
     # Process params

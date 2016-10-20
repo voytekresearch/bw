@@ -6,7 +6,6 @@
     [-p P]
     [-d D]
     [-q Q]
-    [-s S]
     [--dt DT]
     [--min_P MP]
 
@@ -22,7 +21,6 @@ with time.
         -p P        E drive at burst [default: 2]
         -d D        drive drift term [default: 0.1]
         -q Q        avg I drive  [default: 1]
-        -s S        std dev of drive variations [default: 0.1]
         --dt DT     time resolution [default: 1e-3]
         --min_P MP    smallest P possible [default: 1]
 """
@@ -36,7 +34,7 @@ from brian2 import *
 from fakespikes import rates
 
 
-def ie(t, P, drift, s, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1):
+def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1):
     # --
     time = t * second
     time_step = dt * second
@@ -88,6 +86,7 @@ def ie(t, P, drift, s, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1)
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
+    # np.random.seed(42)
    
     # -
     # Process params
@@ -96,20 +95,16 @@ if __name__ == "__main__":
    
     P = float(args['-p'])
     d = float(args['-d'])
-    s = float(args['-s'])
+    if d < 0:
+        raise ValueError("d must > 0.")
 
     Q = float(args['-q'])
     min_P = float(args['--min_P'])
 
-    if not np.allclose(s, 0):
-        d = np.random.normal(d, d * s, size=1)
-
-    # Prevent negative drifts
-    d[d < 0] = 0.0001
 
     # -
     # Run model
-    I, E = ie(t, P, d, s, min_P=min_P)
+    I, E = ie(t, P, d, min_P=min_P)
     lfp = (E + I)
  
  # -
@@ -122,6 +117,5 @@ if __name__ == "__main__":
             dt=dt,
             P=P,
             Q=Q,
-            s=s,
             d=d
         )

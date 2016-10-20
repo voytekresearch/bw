@@ -93,7 +93,8 @@ def ie(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
-   
+    np.random.seed(42)
+
     # -
     # Process params
     N = int(args['-n'])
