@@ -7,6 +7,7 @@
     [-d D]
     [-q Q]
     [--dt DT]
+    [--seed SEED]
     [--min_P MP]
 
 Wilcon-Cowan EI model, where the oscillation frequency drifts
@@ -22,7 +23,8 @@ with time.
         -d D        drive drift term [default: 0.1]
         -q Q        avg I drive  [default: 1]
         --dt DT     time resolution [default: 1e-3]
-        --min_P MP    smallest P possible [default: 1]
+        --seed SEED random seed
+        --min_P MP  smallest P possible [default: 1]
 """
 from __future__ import division, print_function
 
@@ -86,7 +88,13 @@ def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1):
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
-    # np.random.seed(42)
+
+    try:
+        seed = int(args['--seed'])
+    except TypeError:
+        seed = None
+        pass
+    np.random.seed(seed)
    
     # -
     # Process params

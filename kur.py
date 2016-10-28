@@ -61,8 +61,12 @@ def simulate(theta0, times, omegas, K, N):
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
-
-    seed = int(args['--seed'])
+    
+    try:
+        seed = int(args['--seed'])
+    except TypeError:
+        seed = None
+        pass
     np.random.seed(seed)
 
     # -
@@ -120,5 +124,7 @@ if __name__ == "__main__":
             seed=seed,
             N=N, 
             K=K, 
-            times=times
+            times=times,
+            t=T,
+            dt=dt
         )

@@ -7,6 +7,7 @@
     [-p P]
     [-q Q]
     [-s S]
+    [--seed SEED]
     [--dt DT]
 
 Wilcon-Cowan EI model.
@@ -21,6 +22,7 @@ Wilcon-Cowan EI model.
         -p P        Avg E drive  [default: 2]
         -q Q        Avg I drive  [default: 1]
         -s S        Std dev of drive variations [default: 0.1]
+        --seed SEED random seed 
         --dt DT     time resolution [default: 1e-3]
 """
 from __future__ import division, print_function
@@ -93,13 +95,20 @@ def ie(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
-    np.random.seed(42)
+
+    try:
+        seed = int(args['--seed'])
+        print(seed)
+    except TypeError:
+        seed = None
+        pass
+    np.random.seed(seed)
 
     # -
     # Process params
     N = int(args['-n'])
-    if N < 5:
-        raise ValueError("N must be > 5.")
+    if N < 2:
+        raise ValueError("N must be > 2.")
 
     t = float(args['-t'])
     dt = float(args['--dt'])
