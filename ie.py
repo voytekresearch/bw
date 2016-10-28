@@ -3,7 +3,6 @@
 # ---------------------------------------------------------------------
 """Usage: ie.py NAME 
     [-t T] 
-    [-n N]  
     [-p P]
     [-q Q]
     [-s S]
@@ -17,10 +16,9 @@ Wilcon-Cowan EI model.
     Options:
         -h help     show this screen
         -t T        simultation run time [default: 3.0]
-        -n N        number of populations [default: 100]
-        -p P        Avg E drive  [default: 2]
-        -q Q        Avg I drive  [default: 1]
-        -s S        Std dev of drive variations [default: 0.1]
+        -p P        E drive  [default: 2]
+        -q Q        I drive  [default: 1]
+        -s S        std dev of drive variations [default: 0.1]
         --dt DT     time resolution [default: 1e-3]
 """
 from __future__ import division, print_function
@@ -33,7 +31,7 @@ from brian2 import *
 
 
 # P=1, Q=3
-def ie(t, P, Q, c1, c2, c3, c4, dt=1e-3):
+def ie(t, P, Q, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
     # --
     time = t * second
     time_step = dt * second
@@ -70,28 +68,8 @@ def ie(t, P, Q, c1, c2, c3, c4, dt=1e-3):
     defaultclock.dt = time_step
     run(time, report='text')
 
-    return mon.I, mon.E
+    return mon.I.flatten(), mon.E.flatten()
 
-
-def simulate(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
-    # Run N simulations at varying drives
-    # connectivity is fixed
-    if len(Ps) != N:
-        raise ValueError("Ps must have a len of {}".format(N))
-    if len(Qs) != N:
-        raise ValueError("Qs must have a len of {}".format(N))
-
-    E, I = [], []
-    for n, (p, q) in enumerate(zip(Ps, Qs)):
-        i, e = ie(t, p, q, c1, c2, c3, c4, dt)
-
-        E.append(e)
-        I.append(i)
-
-    E = np.vstack(E)
-    I = np.vstack(I)
-
-    return I, E    
 
 
 if __name__ == "__main__":
@@ -99,35 +77,25 @@ if __name__ == "__main__":
    
     # -
     # Process params
-    N = int(args['-n'])
-
     t = float(args['-t'])
     dt = float(args['--dt'])
    
     P = float(args['-p'])
     Q = float(args['-q'])
-    s = float(args['-s'])
-
-    if np.allclose(s, 0):
-        Ps = np.repeat(P, N)
-        Qs = np.repeat(Q, N)
-    else:
-        Ps = np.random.normal(P, P * s, size=N)
-        Qs = np.random.normal(Q, Q * s, size=N)
 
     # -
-    I, E = simulate(t, Ps, Qs, N, dt=dt)
-    lfp = (E + I).mean(0) 
+    I, E = ie(t, P, Q, dt=dt)
+
+    lfp = E + I
 
     # -
     save_kdf(
             str(args['NAME']),
-            N=N,
             E=E,
             I=I,
             lfp=lfp,
             t=t,
             dt=dt,
-            Ps=Ps,
-            Qs=Qs
+            P=P,
+            Q=Q
         )
