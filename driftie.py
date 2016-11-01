@@ -38,7 +38,17 @@ from brian2 import *
 from fakespikes import rates
 
 
-def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1, sigma=0.01):
+def ie(t,
+       P,
+       drift,
+       c1=15.0,
+       c2=15.0,
+       c3=15.0,
+       c4=3.0,
+       Q=1,
+       dt=1e-3,
+       min_P=1,
+       sigma=0.01):
     # --
     time = t * second
     time_step = dt * second
@@ -61,7 +71,7 @@ def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1, si
     P[P < min_P] = min_P
 
     # Scale it
-    P = P * (2**-0.03) 
+    P = P * (2** -0.03)
 
     # Format for Brian2
     P = TimedArray(P, dt=time_step)
@@ -72,7 +82,7 @@ def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1, si
             dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i + (sigma / tau_i**.5 * xi_i) : 1
         """
 
-    pops = NeuronGroup(1, model=eqs, namespace={'Q' : Q})
+    pops = NeuronGroup(1, model=eqs, namespace={'Q': Q})
     pops.E = 0
     pops.I = 0
 
@@ -97,12 +107,12 @@ if __name__ == "__main__":
         seed = None
         pass
     np.random.seed(seed)
-   
+
     # -
     # Process params
     t = float(args['-t'])
     dt = float(args['--dt'])
-   
+
     P = float(args['-p'])
     d = float(args['-d'])
     if d < 0:
@@ -117,17 +127,16 @@ if __name__ == "__main__":
     # Run model
     I, E = ie(t, P, d, min_P=min_P, sigma=sigma)
     lfp = (E + I)
- 
+
     # -
     save_kdf(
-            str(args['NAME']),
-            E=E,
-            I=I,
-            lfp=lfp,
-            t=t,
-            dt=dt,
-            P=P,
-            Q=Q,
-            d=d,
-            sigma=sigma
-        )
+        str(args['NAME']),
+        E=E,
+        I=I,
+        lfp=lfp,
+        t=t,
+        dt=dt,
+        P=P,
+        Q=Q,
+        d=d,
+        sigma=sigma)

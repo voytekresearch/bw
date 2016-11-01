@@ -39,8 +39,18 @@ from brian2 import *
 from fakespikes import rates
 
 
-def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, 
-        dt=1e-3, min_P=0, sigma=0.01):
+def ie(t,
+       P,
+       t_burst,
+       w,
+       c1=15.0,
+       c2=15.0,
+       c3=15.0,
+       c4=3.0,
+       Q=1,
+       dt=1e-3,
+       min_P=0,
+       sigma=0.01):
     # --
     time = t * second
     time_step = dt * second
@@ -62,7 +72,7 @@ def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1,
     P = rates.square_pulse(times, P, t_burst, w, dt, min_a=min_P)
 
     # Scale it
-    P = P * (2**-0.03) 
+    P = P * (2** -0.03)
 
     # Format for Brian2
     P = TimedArray(P, dt=time_step)
@@ -73,7 +83,7 @@ def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1,
             dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i + (sigma / tau_i**.5 * xi_i) : 1
         """
 
-    pops = NeuronGroup(1, model=eqs, namespace={'Q' : Q})
+    pops = NeuronGroup(1, model=eqs, namespace={'Q': Q})
     pops.E = 0
     pops.I = 0
 
@@ -102,7 +112,6 @@ if __name__ == "__main__":
     # Process params
     t = float(args['-t'])
     dt = float(args['--dt'])
-   
 
     t_burst = float(args['-b'])
     w = float(args['-w'])
@@ -115,10 +124,11 @@ if __name__ == "__main__":
 
     # Only add noise to the window length
     if not np.allclose(s, 0):
-        w = np.random.normal(w, w * s, size=1)
+        w = np.random.normal(w, w * s, size=1)[0]
+
         # Prevent negative time
         if w < 0:
-            w = 0.0001 
+            w = 0.0001
 
     # -
     # Run model
@@ -127,15 +137,14 @@ if __name__ == "__main__":
 
     # -
     save_kdf(
-            str(args['NAME']),
-            E=E,
-            I=I,
-            lfp=lfp,
-            t=t,
-            dt=dt,
-            sigma=sigma,
-            P=P,
-            Q=Q,
-            w=w,
-            s=s
-        )
+        str(args['NAME']),
+        E=E,
+        I=I,
+        lfp=lfp,
+        t=t,
+        dt=dt,
+        sigma=sigma,
+        P=P,
+        Q=Q,
+        w=w,
+        s=s)

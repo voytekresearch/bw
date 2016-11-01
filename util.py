@@ -3,9 +3,13 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 
-def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
-                 kpsh=False, valley=False):
-
+def detect_peaks(x,
+                 mph=None,
+                 mpd=1,
+                 threshold=0,
+                 edge='rising',
+                 kpsh=False,
+                 valley=False):
     """Detect peaks in data based on their amplitude and other features.
 
     Parameters
@@ -94,25 +98,32 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
         ine = np.where((np.hstack((dx, 0)) < 0) & (np.hstack((0, dx)) > 0))[0]
     else:
         if edge.lower() in ['rising', 'both']:
-            ire = np.where((np.hstack((dx, 0)) <= 0) & (np.hstack((0, dx)) > 0))[0]
+            ire = np.where((np.hstack((dx, 0)) <= 0) & (np.hstack((0, dx)) > 0
+                                                        ))[0]
         if edge.lower() in ['falling', 'both']:
-            ife = np.where((np.hstack((dx, 0)) < 0) & (np.hstack((0, dx)) >= 0))[0]
+            ife = np.where((np.hstack((dx, 0)) < 0) & (np.hstack((0, dx)) >= 0
+                                                       ))[0]
     ind = np.unique(np.hstack((ine, ire, ife)))
     # handle NaN's
     if ind.size and indnan.size:
         # NaN's and values close to NaN's cannot be peaks
-        ind = ind[np.in1d(ind, np.unique(np.hstack((indnan, indnan-1, indnan+1))), invert=True)]
+        ind = ind[np.in1d(ind,
+                          np.unique(np.hstack((indnan, indnan - 1, indnan + 1
+                                               ))),
+                          invert=True)]
     # first and last values of x cannot be peaks
     if ind.size and ind[0] == 0:
         ind = ind[1:]
-    if ind.size and ind[-1] == x.size-1:
+    if ind.size and ind[-1] == x.size - 1:
         ind = ind[:-1]
     # remove peaks < minimum peak height
     if ind.size and mph is not None:
         ind = ind[x[ind] >= mph]
     # remove peaks - neighbors < threshold
     if ind.size and threshold > 0:
-        dx = np.min(np.vstack([x[ind]-x[ind-1], x[ind]-x[ind+1]]), axis=0)
+        dx = np.min(
+            np.vstack([x[ind] - x[ind - 1], x[ind] - x[ind + 1]]),
+            axis=0)
         ind = np.delete(ind, np.where(dx < threshold)[0])
     # detect small peaks closer than minimum peak distance
     if ind.size and mpd > 1:
@@ -134,10 +145,10 @@ def fit_gaussian(x, y, stdev0, **detect_pars):
     # -
     # First find peaks, then
     peaks = detect_peaks(y, **detect_pars)
-    
+
     centers = x[peaks]
     powers = y[peaks]
-    
+
     # fit Guassians to the found peaks, 
     # **opt only for stdevs**.
     # Note: closes centers and powers
@@ -156,7 +167,7 @@ def fit_gaussian(x, y, stdev0, **detect_pars):
         for i, (ctr, amp) in enumerate(zip(centers, powers)):
             wid = params[i]
             y += amp * np.exp(-1 * ((x - ctr) / wid)**2)
-        
+
         return y
 
     p0 = np.ones_like(centers) * stdev0
@@ -169,10 +180,10 @@ def fit_gaussian(x, y, stdev0, **detect_pars):
     except RuntimeError:
         stdevs = np.ones_like(centers) * np.nan
         fit = np.ones_like(y) * np.nan
-   
-    # For unknown reasons curve_fit sometimes doesn't budge from
-    # stdev0. This is not so useful, so we manually set those stdevs
-    # to nan
+
+# For unknown reasons curve_fit sometimes doesn't budge from
+# stdev0. This is not so useful, so we manually set those stdevs
+# to nan
     stdevs[np.isclose(stdevs, stdev0)] = np.nan
 
     return centers, powers, stdevs, fit

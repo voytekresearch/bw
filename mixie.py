@@ -52,7 +52,7 @@ def _ie(t, P, Q, c1, c2, c3, c4, dt=1e-3, sigma=0.01):
     tau_e = 5 * msecond
     tau_i = 10 * msecond
 
-    P = P * (2**-0.03) 
+    P = P * (2** -0.03)
 
     eqs = """
     dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k* P - 2))) - 1/(1 + exp(2*1.0)))) / tau_e + (sigma / tau_e**.5 * xi_e) : 1
@@ -61,7 +61,7 @@ def _ie(t, P, Q, c1, c2, c3, c4, dt=1e-3, sigma=0.01):
     # Q : 1 (constant)
     """
 
-    pops = NeuronGroup(1, model=eqs, namespace={'Q' : Q, 'P': P})
+    pops = NeuronGroup(1, model=eqs, namespace={'Q': Q, 'P': P})
     pops.E = 0
     pops.I = 0
 
@@ -92,7 +92,7 @@ def ie(t, Ps, Qs, N, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3, sigma=0.01):
     E = np.vstack(E).mean(0)
     I = np.vstack(I).mean(0)
 
-    return I, E    
+    return I, E
 
 
 if __name__ == "__main__":
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     t = float(args['-t'])
     dt = float(args['--dt'])
-   
+
     P = float(args['-p'])
     Q = float(args['-q'])
     s = float(args['-s'])
@@ -133,14 +133,13 @@ if __name__ == "__main__":
 
     # -
     save_kdf(
-            str(args['NAME']),
-            N=N,
-            E=E,
-            I=I,
-            lfp=lfp,
-            t=t,
-            dt=dt,
-            sigma=sigma,
-            Ps=Ps,
-            Qs=Qs
-        )
+        str(args['NAME']),
+        N=N,
+        E=E,
+        I=I,
+        lfp=lfp,
+        t=t,
+        dt=dt,
+        sigma=sigma,
+        Ps=Ps,
+        Qs=Qs)

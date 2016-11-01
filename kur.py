@@ -6,6 +6,7 @@
     [-r OMEGA_RANGE]
     [--seed SEED]
     [--dt DT]
+    [--sigma SIGMA]
 
 Kuramoto model.
 
@@ -22,6 +23,7 @@ Kuramoto model.
 
         --seed SEED             seed for creating the stimulus [default: 42]
         --dt DT                 time resolution [default: 1e-2]
+        --sigma SIGMA  Population noise [default: 1e-2]
 """
 from __future__ import division, print_function
 
@@ -32,7 +34,7 @@ from pykdf.kdf import save_kdf
 
 
 # --
-def kuramoto(theta, t, omega, K, N):
+def kuramoto(theta, t, omega, K, N, sigma):
     # In classic kuramoto...
 
     # each oscillator gets the same wieght K
@@ -42,17 +44,17 @@ def kuramoto(theta, t, omega, K, N):
     # and all oscillators are connected to all
     # oscillators
     theta = np.atleast_2d(theta)  # for broadcasting
-    W = np.sum(
-            np.sin(theta - theta.T), 1
-        )
+    W = np.sum(np.sin(theta - theta.T), 1)
 
-    return omega + c * W
+    ep = np.random.normal(0, sigma)
+
+    return omega + ep + (c * W)
 
 
-def simulate(theta0, times, omegas, K, N):
+def simulate(theta0, times, omegas, K, N, sigma):
     """Simulate a Kuramoto model."""
 
-    thetas = odeint(kuramoto, theta0, times, args=(omegas, K, N))
+    thetas = odeint(kuramoto, theta0, times, args=(omegas, K, N, sigma))
     thetas = np.mod(thetas, 2 * np.pi)
     thetas -= np.pi
 
@@ -61,7 +63,7 @@ def simulate(theta0, times, omegas, K, N):
 
 if __name__ == "__main__":
     args = docopt(__doc__, version='alpha')
-    
+
     try:
         seed = int(args['--seed'])
     except TypeError:
@@ -81,7 +83,8 @@ if __name__ == "__main__":
 
     # -
     # Init oscillators
-    omega = float(args['-o']); # mean freq
+    omega = float(args['-o'])
+    # mean freq
     omega_range = float(args['-r'])
 
     a = omega - omega_range
@@ -93,12 +96,14 @@ if __name__ == "__main__":
     if b < 0:
         raise ValueError("The center frequency must be > 0.")
 
+    sigma = float(args['--sigma'])
+
     # Init
     omegas = np.random.uniform(a, b, size=N)
-    theta0 = np.random.uniform(-np.pi * 2, np.pi * 2, size=N)  
+    theta0 = np.random.uniform(-np.pi * 2, np.pi * 2, size=N)
 
     # -
-    thetas = simulate(theta0, times, omegas, K, N)
+    thetas = simulate(theta0, times, omegas, K, N, sigma)
 
     # -
     # From the unit circle to sin waves, and the simulated lfp.
@@ -106,7 +111,7 @@ if __name__ == "__main__":
     for n in range(N):
         th = thetas[:, n]
         f = omegas[n]
-        
+
         wave = np.sin(f * 2 * np.pi * times + th)
         waves.append(wave)
 
@@ -115,16 +120,16 @@ if __name__ == "__main__":
 
     # -
     save_kdf(
-            str(args['NAME']),
-            thetas=thetas,
-            theta0=theta0,
-            omegas=omegas,
-            waves=waves,
-            lfp=lfp,
-            seed=seed,
-            N=N, 
-            K=K, 
-            times=times,
-            t=T,
-            dt=dt
-        )
+        str(args['NAME']),
+        thetas=thetas,
+        theta0=theta0,
+        omegas=omegas,
+        waves=waves,
+        lfp=lfp,
+        seed=seed,
+        sigma=sigma,
+        N=N,
+        K=K,
+        times=times,
+        t=T,
+        dt=dt)
