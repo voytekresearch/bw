@@ -10,6 +10,7 @@
     [-s S]
     [--seed SEED]
     [--dt DT]
+    [--sigma SIGMA]
 
 Wilcon-Cowan EI model of oscillatory bursting.
 
@@ -23,9 +24,10 @@ Wilcon-Cowan EI model of oscillatory bursting.
         -b B        burst onset time [default: 1]
         -w W        burst onset length [default: 0.1]
         -q Q        avg I drive  [default: 1]
-        -s S        std dev of drive variations [default: 0.1]
+        -s S        std dev of window variations [default: 0.1]
         --seed SEED random seed
         --dt DT     time resolution [default: 1e-3]
+        --sigma SIGMA  Population noise [default: 1e-2]
 """
 from __future__ import division, print_function
 
@@ -37,7 +39,8 @@ from brian2 import *
 from fakespikes import rates
 
 
-def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=0):
+def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, 
+        dt=1e-3, min_P=0, sigma=0.01):
     # --
     time = t * second
     time_step = dt * second
@@ -66,8 +69,8 @@ def ie(t, P, t_burst, w, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=
 
     # -
     eqs = """
-            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k * P(t) - 2))) - 1/(1 + exp(2*1.0)))) / tau_e : 1
-            dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i : 1
+            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k * P(t) - 2))) - 1/(1 + exp(2*1.0)))) / tau_e + (sigma / tau_e**.5 * xi_e) : 1
+            dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i + (sigma / tau_i**.5 * xi_i) : 1
         """
 
     pops = NeuronGroup(1, model=eqs, namespace={'Q' : Q})
@@ -108,6 +111,8 @@ if __name__ == "__main__":
     P = float(args['-p'])
     s = float(args['-s'])
 
+    sigma = float(args['--sigma'])
+
     # Only add noise to the window length
     if not np.allclose(s, 0):
         w = np.random.normal(w, w * s, size=1)
@@ -117,7 +122,7 @@ if __name__ == "__main__":
 
     # -
     # Run model
-    I, E = ie(t, P, t_burst, w)
+    I, E = ie(t, P, t_burst, w, sigma=sigma)
     lfp = (E + I)
 
     # -
@@ -128,6 +133,7 @@ if __name__ == "__main__":
             lfp=lfp,
             t=t,
             dt=dt,
+            sigma=sigma,
             P=P,
             Q=Q,
             w=w,

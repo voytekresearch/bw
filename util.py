@@ -130,10 +130,10 @@ def detect_peaks(x, mph=None, mpd=1, threshold=0, edge='rising',
     return ind
 
 
-def fit_gaussian(x, y, *detect_pars):
+def fit_gaussian(x, y, stdev0, **detect_pars):
     # -
     # First find peaks, then
-    peaks = detect_peaks(y, *detect_pars)
+    peaks = detect_peaks(y, **detect_pars)
     
     centers = x[peaks]
     powers = y[peaks]
@@ -159,10 +159,20 @@ def fit_gaussian(x, y, *detect_pars):
         
         return y
 
-    p0 = np.ones_like(centers) 
-    popt, pcov = curve_fit(gauss, x, y, p0=p0)
-    stdevs = popt
+    p0 = np.ones_like(centers) * stdev0
 
-    fit = gauss(x, *popt)
-    
+    try:
+        popt, pcov = curve_fit(gauss, x, y, p0=p0, bounds=(0.01, 20))
+        stdevs = popt
+
+        fit = gauss(x, *popt)
+    except RuntimeError:
+        stdevs = np.ones_like(centers) * np.nan
+        fit = np.ones_like(y) * np.nan
+   
+    # For unknown reasons curve_fit sometimes doesn't budge from
+    # stdev0. This is not so useful, so we manually set those stdevs
+    # to nan
+    stdevs[np.isclose(stdevs, stdev0)] = np.nan
+
     return centers, powers, stdevs, fit

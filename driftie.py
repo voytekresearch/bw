@@ -9,6 +9,7 @@
     [--dt DT]
     [--seed SEED]
     [--min_P MP]
+    [--sigma SIGMA]
 
 Wilcon-Cowan EI model, where the oscillation frequency drifts
 with time.
@@ -25,6 +26,7 @@ with time.
         --dt DT     time resolution [default: 1e-3]
         --seed SEED random seed
         --min_P MP  smallest P possible [default: 1]
+        --sigma SIGMA  Population noise [default: 1e-2]
 """
 from __future__ import division, print_function
 
@@ -36,7 +38,7 @@ from brian2 import *
 from fakespikes import rates
 
 
-def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1):
+def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1, sigma=0.01):
     # --
     time = t * second
     time_step = dt * second
@@ -66,8 +68,8 @@ def ie(t, P, drift, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, min_P=1):
 
     # -
     eqs = """
-            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k * P(t) - 2))) - 1/(1 + exp(2*1.0)))) / tau_e : 1
-            dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i : 1
+            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k * P(t) - 2))) - 1/(1 + exp(2*1.0)))) / tau_e  + (sigma / tau_e**.5 * xi_e) : 1
+            dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i + (sigma / tau_i**.5 * xi_i) : 1
         """
 
     pops = NeuronGroup(1, model=eqs, namespace={'Q' : Q})
@@ -109,13 +111,14 @@ if __name__ == "__main__":
     Q = float(args['-q'])
     min_P = float(args['--min_P'])
 
+    sigma = float(args['--sigma'])
 
     # -
     # Run model
-    I, E = ie(t, P, d, min_P=min_P)
+    I, E = ie(t, P, d, min_P=min_P, sigma=sigma)
     lfp = (E + I)
  
- # -
+    # -
     save_kdf(
             str(args['NAME']),
             E=E,
@@ -125,5 +128,6 @@ if __name__ == "__main__":
             dt=dt,
             P=P,
             Q=Q,
-            d=d
+            d=d,
+            sigma=sigma
         )

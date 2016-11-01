@@ -7,6 +7,7 @@
     [-q Q]
     [-s S]
     [--dt DT]
+    [--sigma SIGMA]
 
 Wilcon-Cowan EI model.
 
@@ -20,6 +21,8 @@ Wilcon-Cowan EI model.
         -q Q        I drive  [default: 1]
         -s S        std dev of drive variations [default: 0.1]
         --dt DT     time resolution [default: 1e-3]
+        --sigma SIGMA  Population noise [default: 1e-2]
+
 """
 from __future__ import division, print_function
 
@@ -31,7 +34,7 @@ from brian2 import *
 
 
 # P=1, Q=3
-def ie(t, P, Q, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
+def ie(t, P, Q, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3, sigma=0.01):
     # --
     time = t * second
     time_step = dt * second
@@ -49,8 +52,8 @@ def ie(t, P, Q, c1=15.0, c2=15.0, c3=15.0, c4=3.0, dt=1e-3):
     P = P * (2**-0.03) 
 
     eqs = """
-            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k* P - 2))) - 1/(1 + exp(2*1.0)))) / tau_e : 1
-            dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i : 1
+            dE/dt = -E/tau_e + ((1 - re * E) * (1 / (1 + exp(-(k * c1 * E - k * c2 * I+ k* P - 2))) - 1/(1 + exp(2*1.0)))) / tau_e + (sigma / tau_e**.5 * xi_e) : 1
+            dI/dt = -I/tau_i + ((1 - ri * I) * (1 / (1 + exp(-2 * (kn * c3 * E - kn * c4 * I + kn * Q - 2.5))) - 1/(1 + exp(2*2.5)))) / tau_i + (sigma / tau_i**.5 * xi_i) : 1
             # P : 1 (constant)
             # Q : 1 (constant)
         """
@@ -83,8 +86,10 @@ if __name__ == "__main__":
     P = float(args['-p'])
     Q = float(args['-q'])
 
+    sigma = float(args['--sigma'])
+
     # -
-    I, E = ie(t, P, Q, dt=dt)
+    I, E = ie(t, P, Q, dt=dt, sigma=sigma)
 
     lfp = E + I
 
@@ -96,6 +101,7 @@ if __name__ == "__main__":
             lfp=lfp,
             t=t,
             dt=dt,
+            sigma=sigma,
             P=P,
             Q=Q
         )
