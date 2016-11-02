@@ -36,7 +36,7 @@ mixie_s:
 	parallel -j 10 -v \
 		--joblog 'data/mixie_s/log' \
 		--nice 19 \
-		'python mixie.py data/mixie_s/s{1}_run{2} -n 10 -p1 -q 2 -s {1} -t 3 --seed {2}' ::: 0.5 0.7 0.9 1.1 1.3 1.5 1.7 1.9 2.0 ::: {1..100} 
+		'python mixie.py data/mixie_s/s{1}_run{2} -n 10 -p 1 -q 2 -s {1} -t 3 --seed {2}' ::: 0.5 0.7 0.9 1.1 1.3 1.5 1.7 1.9 2.0 ::: {1..100} 
 
 # =========================================================================
 # Burstie
@@ -81,5 +81,18 @@ kur_r:
 	parallel -j 10 -v \
 		--joblog 'data/kur_r/log' \
 		--nice 19 \
-		'python kur.py data/kur_r/r{1}_run{2} -t 3 -n 50 -k 6 -o 25 -r {1} --seed {2}' ::: 1 3 5 7 9 ::: {1..100}
+		'python kur.py data/kur_r/r{1}_run{2} -t 3 -n 10 -k 6 -o 25 -r {1} --seed {2}' ::: 1 3 5 7 9 ::: {1..100}
+
+kur_n: 
+	-mkdir data/kur_n
+	-rm data/kur_n/*
+	parallel -j 10 -v \
+		--joblog 'data/kur_n/log' \
+		--nice 19 \
+		'python kur.py data/kur_n/k6_n{1}_run{2} -t 3 -n {1} -k 6 -o 25 -r 1 --seed {2}' ::: 3 5 7 9 10 12 14 16 18 20 ::: {1..100}
+	parallel -j 10 -v \
+		--joblog 'data/kur_n/log' \
+		--nice 19 \
+		'python kur.py data/kur_n/k12_n{1}_run{2} -t 3 -n {1} -k 12 -o 25 -r 1 --seed {2}' ::: 3 5 7 9 10 12 14 16 18 20 ::: {1..100}
+
 
