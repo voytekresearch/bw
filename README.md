@@ -10,6 +10,7 @@ See the `Makefile` for experiments to date, as well as the `ipynb` folder.
 - fakespikes: [https://github.com/voytekresearch/fakespikes]()
 - brian2: [https://brian2.readthedocs.io/en/stable/]()
 - numpy, scipy, etc (i.e. install conda).
+- to run the experiments in the `Makefile` you'll also need gnu parallel: [https://www.gnu.org/software/parallel/]()
 
 # results
 
