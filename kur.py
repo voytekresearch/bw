@@ -4,6 +4,7 @@
     [-k K]
     [-o OMEGA]
     [-r OMEGA_RANGE]
+    [-p PON]
     [--seed SEED]
     [--dt DT]
     [--sigma SIGMA]
@@ -20,7 +21,7 @@ Kuramoto model.
         -k K                    coupling (as fraction of N) [default: 6]
         -o OMEGA                center frequency [default: 10]
         -r OMEGA_RANGE          min/max of the center [default: 1]
-
+        -p PON                  probability a ith oscillator is on [default: 1]
         --seed SEED             seed for creating the stimulus [default: 42]
         --dt DT                 time resolution [default: 1e-2]
         --sigma SIGMA  Population noise [default: 1e-2]
@@ -30,6 +31,8 @@ from __future__ import division, print_function
 from docopt import docopt
 import numpy as np
 from scipy.integrate import odeint
+from scipy.integrate import ode
+from sdeint import itoint
 from pykdf.kdf import save_kdf
 
 
@@ -46,19 +49,40 @@ def kuramoto(theta, t, omega, K, N, sigma):
     theta = np.atleast_2d(theta)  # for broadcasting
     W = np.sum(np.sin(theta - theta.T), 1)
 
-    ep = np.random.normal(0, sigma)
+    # ep = np.random.normal(0, sigma, N)
+    ep = np.random.normal(0, sigma, N)
 
     return omega + ep + (c * W)
 
 
-def simulate(theta0, times, omegas, K, N, sigma):
+def onoff(theta, t, omega, K, N, sigma, p):
+    theta = kuramoto(theta, t, omega, K, N, sigma)
+
+    return theta * np.random.binomial(1, p, size=N)
+
+
+def simulate(theta0, T, omegas, K, N, sigma, p, dt):
     """Simulate a Kuramoto model."""
 
-    thetas = odeint(kuramoto, theta0, times, args=(omegas, K, N, sigma))
+    times = np.linspace(0, T, int(T / dt))
+
+    def G(_, t):
+        return np.diag(np.ones(N) * sigma)
+
+    if np.allclose(p, 1):
+
+        def f(theta, t):
+            return kuramoto(theta, t, omegas, K, N, sigma)
+    else:
+
+        def f(theta, t):
+            return onoff(theta, t, omegas, K, N, sigma, p)
+
+    thetas = itoint(f, G, theta0, times)
     thetas = np.mod(thetas, 2 * np.pi)
     thetas -= np.pi
 
-    return thetas
+    return thetas, times
 
 
 if __name__ == "__main__":
@@ -75,15 +99,16 @@ if __name__ == "__main__":
     # Network
     N = int(args['-n'])
     K = float(args['-k'])
+    p = float(args['-p'])
 
     # Time
     T = float(args['-t'])
     dt = float(args['--dt'])
-    times = np.linspace(0, T, int(T / dt))
 
     # -
     # Init oscillators
     omega = float(args['-o'])
+
     # mean freq
     omega_range = float(args['-r'])
 
@@ -103,7 +128,7 @@ if __name__ == "__main__":
     theta0 = np.random.uniform(-np.pi * 2, np.pi * 2, size=N)
 
     # -
-    thetas = simulate(theta0, times, omegas, K, N, sigma)
+    thetas, times = simulate(theta0, T, omegas, K, N, sigma, p, dt)
 
     # -
     # From the unit circle to sin waves, and the simulated lfp.
