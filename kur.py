@@ -30,8 +30,6 @@ from __future__ import division, print_function
 
 from docopt import docopt
 import numpy as np
-from scipy.integrate import odeint
-from scipy.integrate import ode
 from sdeint import itoint
 from pykdf.kdf import save_kdf
 
