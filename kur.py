@@ -54,9 +54,15 @@ def kuramoto(theta, t, omega, K, N, sigma):
 
 
 def onoff(theta, t, omega, K, N, sigma, p):
-    theta = kuramoto(theta, t, omega, K, N, sigma)
-
-    return theta * np.random.binomial(1, p, size=N)
+    # Remove ith oscillator
+    # Or/and add jth back.
+    # When adding back, randomize the phase.
+    # HOWTO implement?
+    # Call different kuramotos, setting omega/theta
+    # as appropriates (resting as approproate too)
+    # Does just differentially noise have
+    # a similar effect?
+    return omega + ep + (c * W)
 
 
 def simulate(theta0, T, omegas, K, N, sigma, p, dt):
