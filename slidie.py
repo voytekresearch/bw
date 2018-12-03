@@ -38,16 +38,7 @@ from brian2 import *
 from fakespikes import rates
 
 
-def ie(t,
-       P0,
-       PN,
-       c1=15.0,
-       c2=15.0,
-       c3=15.0,
-       c4=3.0,
-       Q=1,
-       dt=1e-3,
-       sigma=0.01):
+def ie(t, P0, PN, c1=15.0, c2=15.0, c3=15.0, c4=3.0, Q=1, dt=1e-3, sigma=0.01):
     # --
     time = t * second
     time_step = dt * second
@@ -69,7 +60,7 @@ def ie(t,
     P = np.linspace(P0, PN, len(times))
 
     # Scale it
-    P = P * (2** -0.03)
+    P = P * (2**-0.03)
 
     # Format for Brian2
     P = TimedArray(P, dt=time_step)
@@ -93,7 +84,7 @@ def ie(t,
     defaultclock.dt = time_step
     run(time)
 
-    return mon.I.flatten(), mon.E.flatten()
+    return mon.I.flatten(), mon.E.flatten(), P
 
 
 if __name__ == "__main__":
